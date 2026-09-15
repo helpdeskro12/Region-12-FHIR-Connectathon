@@ -1,0 +1,2184 @@
+{
+  "info": {
+    "_postman_id": "215b50a1-9899-4ded-b526-f86e2d630b98",
+    "name": "R12 FHIR Connectathon — PeRef Guided Labs (Lightweight IG-Inspired)",
+    "description": "# R12 FHIR Connectathon — PeRef Guided Labs\n\nParticipant collection for a lightweight PH eReferral v0.1 workflow.\n\n## Workflow\nterminology → validate → create/send → read/search → receive → accept → close\n\n## Design basis\n- PH eReferral v0.1 Connectathon Readiness minimum by-hand test\n- IG Ana Reyes end-to-end sample case\n- June 2026 PH FHIR Connectathon transaction/conditional-PUT pattern\n\n## Lightweight scope\nThe initiation transaction contains only 9 resources:\nPatient, referring Practitioner, referring + receiving Organization,\nreferring PractitionerRole, Condition, BP Observation, ServiceRequest, and Task.\n\nThe receiving Encounter is created only at closure.\n\nAll patient/practitioner data is fictional training data.\nThe PH eReferral IG is a CI/draft build; facilitators should freeze the event build/commit.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function uuidv4() {",
+          "  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {",
+          "    const r = Math.random() * 16 | 0;",
+          "    const v = c === 'x' ? r : (r & 0x3 | 0x8);",
+          "    return v.toString(16);",
+          "  });",
+          "}",
+          "if (!pm.collectionVariables.get('runId')) pm.collectionVariables.set('runId', Date.now().toString());",
+          "['patientUuid','refPractUuid','refOrgUuid','recvOrgUuid','refRoleUuid','conditionUuid','bpUuid','serviceRequestUuid','taskUuid'].forEach(function(k) {",
+          "  if (!pm.collectionVariables.get(k)) pm.collectionVariables.set(k, uuidv4());",
+          "});",
+          "pm.collectionVariables.set('now', new Date().toISOString());"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "fhirBase",
+      "value": "https://cdr.pheref.fhirlab.net/fhir",
+      "type": "string"
+    },
+    {
+      "key": "txBase",
+      "value": "https://tx.fhirlab.net/fhir",
+      "type": "string"
+    },
+    {
+      "key": "teamCode",
+      "value": "TEAM01",
+      "type": "string"
+    },
+    {
+      "key": "referringFacilityNhfr",
+      "value": "SET-ME-REFERRING-NHFR",
+      "type": "string"
+    },
+    {
+      "key": "receivingFacilityNhfr",
+      "value": "SET-ME-RECEIVING-NHFR",
+      "type": "string"
+    },
+    {
+      "key": "referringFacilityName",
+      "value": "R12 Training Referring Facility",
+      "type": "string"
+    },
+    {
+      "key": "receivingFacilityName",
+      "value": "R12 Training Receiving Facility",
+      "type": "string"
+    },
+    {
+      "key": "nhfrSystem",
+      "value": "https://fhir.doh.gov.ph/phcore/Identifier/doh-nhfr-code",
+      "type": "string"
+    },
+    {
+      "key": "trainingPatientIdSystem",
+      "value": "https://r12-connectathon.example/identifier/patient",
+      "type": "string"
+    },
+    {
+      "key": "trainingPractitionerIdSystem",
+      "value": "https://r12-connectathon.example/identifier/practitioner",
+      "type": "string"
+    },
+    {
+      "key": "trainingPractitionerRoleIdSystem",
+      "value": "https://r12-connectathon.example/identifier/practitioner-role",
+      "type": "string"
+    },
+    {
+      "key": "trainingReferralIdSystem",
+      "value": "https://r12-connectathon.example/identifier/referral",
+      "type": "string"
+    },
+    {
+      "key": "trainingConditionIdSystem",
+      "value": "https://r12-connectathon.example/identifier/condition",
+      "type": "string"
+    },
+    {
+      "key": "trainingObservationIdSystem",
+      "value": "https://r12-connectathon.example/identifier/observation",
+      "type": "string"
+    },
+    {
+      "key": "trainingTaskIdSystem",
+      "value": "https://r12-connectathon.example/identifier/task",
+      "type": "string"
+    },
+    {
+      "key": "psgcSystem",
+      "value": "https://psa.gov.ph/classification/psgc",
+      "type": "string"
+    },
+    {
+      "key": "psgcCodeToLookup",
+      "value": "1206306001",
+      "type": "string"
+    },
+    {
+      "key": "vsPractitionerRole",
+      "value": "https://www.fhir.doh.gov.ph/pheref/ValueSet/practitioner-role",
+      "type": "string"
+    },
+    {
+      "key": "vsReferralCategory",
+      "value": "https://www.fhir.doh.gov.ph/pheref/ValueSet/referral-category",
+      "type": "string"
+    },
+    {
+      "key": "vsReasonForReferral",
+      "value": "https://www.fhir.doh.gov.ph/pheref/ValueSet/reason-for-referral-service-type",
+      "type": "string"
+    },
+    {
+      "key": "profilePatient",
+      "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient",
+      "type": "string"
+    },
+    {
+      "key": "profileCondition",
+      "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-condition",
+      "type": "string"
+    },
+    {
+      "key": "profileObservation",
+      "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-observation",
+      "type": "string"
+    },
+    {
+      "key": "profileServiceRequest",
+      "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-service-request",
+      "type": "string"
+    },
+    {
+      "key": "profileTask",
+      "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-task",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refPractitionerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "referringOrgId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "receivingOrgId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refRoleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conditionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bpObservationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "receivingEncounterId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 — START HERE",
+      "description": "## Purpose\nConfirm access and configure the team.\n\nThis collection follows the current PH eReferral v0.1 Connectathon minimum path:\n**create → send → receive → accept → close**.\n\nThe clinical scenario is a **lighter, fictional training variant inspired by the IG's Ana Reyes sample**.\nIt keeps the same teaching pattern (urgent severe pre-eclampsia + BP 180/110) but removes non-essential\nobservations, procedure, diagnostic report, provenance, and a receiving Practitioner.\n\nBefore Folder 04, set:\n- `teamCode`\n- `referringFacilityNhfr`\n- `receivingFacilityNhfr`\n- `referringFacilityName`\n- `receivingFacilityName`\n\nDo not use real patient information.",
+      "item": [
+        {
+          "name": "00.01 — FHIR CapabilityStatement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/metadata",
+              "host": [
+                "{{fhirBase}}/metadata"
+              ]
+            },
+            "description": "Confirm the target server is FHIR R4 and supports the operations needed for the lab."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of CapabilityStatement\", function () {",
+                  "  pm.expect([\"CapabilityStatement\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "00.02 — Terminology CapabilityStatement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/metadata",
+              "host": [
+                "{{txBase}}/metadata"
+              ]
+            },
+            "description": "Confirm access to the terminology server used for `$expand` and `$lookup`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of CapabilityStatement\", function () {",
+                  "  pm.expect([\"CapabilityStatement\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 — FHIR BASICS",
+      "description": "## Goal\nDistinguish FHIR logical IDs from business identifiers and practice basic search/read operations.",
+      "item": [
+        {
+          "name": "01.01 — Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Patient?_count=5",
+              "host": [
+                "{{fhirBase}}/Patient?_count=5"
+              ]
+            },
+            "description": "FHIR search returns a Bundle of type `searchset`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Bundle\", function () {",
+                  "  pm.expect([\"Bundle\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.02 — Search Organization by NHFR Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Organization?identifier={{nhfrSystem}}%7C{{referringFacilityNhfr}}",
+              "host": [
+                "{{fhirBase}}/Organization?identifier={{nhfrSystem}}%7C{{referringFacilityNhfr}}"
+              ]
+            },
+            "description": "Token search uses `system|value`. `%7C` is the URL-encoded pipe character."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Bundle\", function () {",
+                  "  pm.expect([\"Bundle\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01.03 — Read Patient by Logical ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Patient/{{patientId}}",
+              "host": [
+                "{{fhirBase}}/Patient/{{patientId}}"
+              ]
+            },
+            "description": "Run this after Folder 04 has captured `patientId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Patient, OperationOutcome\", function () {",
+                  "  pm.expect([\"Patient\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — TERMINOLOGY & PSGC",
+      "description": "## Goal\nUse terminology operations before constructing coded FHIR data.\n\n- `$expand` → list selectable codes from a ValueSet\n- `$lookup` → inspect a specific CodeSystem code\n- PSGC hierarchy → Region XII → South Cotabato → Koronadal → barangay",
+      "item": [
+        {
+          "name": "02.01 — Expand Practitioner Role ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsPractitionerRole}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsPractitionerRole}}"
+              ]
+            },
+            "description": "Find the `Medical practitioner` role used by the training PractitionerRole."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.02 — Expand Referral Category ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsReferralCategory}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsReferralCategory}}"
+              ]
+            },
+            "description": "The lightweight scenario uses the Emergency referral category."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.03 — Expand Reason for Referral ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsReasonForReferral}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsReasonForReferral}}"
+              ]
+            },
+            "description": "The lightweight scenario uses SNOMED CT `71388002` Procedure as the coded referral service type."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.04 — Lookup SNOMED: Pre-eclampsia",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/CodeSystem/$lookup?system=http://snomed.info/sct&code=398254007",
+              "host": [
+                "{{txBase}}/CodeSystem/$lookup?system=http://snomed.info/sct&code=398254007"
+              ]
+            },
+            "description": "Code used by the Condition in the IG-inspired scenario."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Parameters, OperationOutcome\", function () {",
+                  "  pm.expect([\"Parameters\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.05 — Lookup LOINC: Blood Pressure Panel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/CodeSystem/$lookup?system=http://loinc.org&code=85354-9",
+              "host": [
+                "{{txBase}}/CodeSystem/$lookup?system=http://loinc.org&code=85354-9"
+              ]
+            },
+            "description": "LOINC code used by the supporting BP Observation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Parameters, OperationOutcome\", function () {",
+                  "  pm.expect([\"Parameters\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.06 — PSGC Lookup: Region XII",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code=1200000000",
+              "host": [
+                "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code=1200000000"
+              ]
+            },
+            "description": "Lookup Region XII (SOCCSKSARGEN)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Parameters, OperationOutcome\", function () {",
+                  "  pm.expect([\"Parameters\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.07 — PSGC Lookup: City of Koronadal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code=1206306000&property=child",
+              "host": [
+                "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code=1206306000&property=child"
+              ]
+            },
+            "description": "Return child PSGC codes (barangays) under Koronadal."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Parameters, OperationOutcome\", function () {",
+                  "  pm.expect([\"Parameters\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.08 — PSGC Lookup: Selected Barangay",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code={{psgcCodeToLookup}}",
+              "host": [
+                "{{txBase}}/CodeSystem/$lookup?system={{psgcSystem}}&code={{psgcCodeToLookup}}"
+              ]
+            },
+            "description": "`psgcCodeToLookup` defaults to Assumption (`1206306001`)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Parameters, OperationOutcome\", function () {",
+                  "  pm.expect([\"Parameters\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 — LIGHTWEIGHT IG-INSPIRED REFERRAL",
+      "description": "## What was retained from the IG sample\n- urgent referral\n- severe pre-eclampsia clinical reason\n- BP 180/110 supporting observation\n- ServiceRequest as the referral\n- Task as workflow state\n\n## What was intentionally omitted\nMultiple additional vital signs, second Condition, Procedure, DiagnosticReport, Provenance,\nreceiving Practitioner/PractitionerRole, and other rich clinical data.\n\nThese `$validate` requests teach the profile shapes without creating server records.",
+      "item": [
+        {
+          "name": "03.01 — Validate Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Patient/$validate?profile={{profilePatient}}",
+              "host": [
+                "{{fhirBase}}/Patient/$validate?profile={{profilePatient}}"
+              ]
+            },
+            "description": "Validate the fictional patient including PH Core PSGC address extensions.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient\"\n    ]\n  },\n  \"identifier\": [\n    {\n      \"system\": \"{{trainingPatientIdSystem}}\",\n      \"value\": \"{{teamCode}}-PATIENT-{{runId}}\"\n    }\n  ],\n  \"active\": true,\n  \"name\": [\n    {\n      \"use\": \"official\",\n      \"family\": \"Santos\",\n      \"given\": [\n        \"Maria\",\n        \"Test\"\n      ]\n    }\n  ],\n  \"telecom\": [\n    {\n      \"system\": \"phone\",\n      \"value\": \"+639000000000\",\n      \"use\": \"mobile\"\n    }\n  ],\n  \"gender\": \"female\",\n  \"birthDate\": \"1988-03-12\",\n  \"address\": [\n    {\n      \"extension\": [\n        {\n          \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/region\",\n          \"valueCoding\": {\n            \"system\": \"{{psgcSystem}}\",\n            \"code\": \"1200000000\",\n            \"display\": \"Region XII (SOCCSKSARGEN)\"\n          }\n        },\n        {\n          \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/province\",\n          \"valueCoding\": {\n            \"system\": \"{{psgcSystem}}\",\n            \"code\": \"1206300000\",\n            \"display\": \"South Cotabato\"\n          }\n        },\n        {\n          \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/city-municipality\",\n          \"valueCoding\": {\n            \"system\": \"{{psgcSystem}}\",\n            \"code\": \"1206306000\",\n            \"display\": \"City of Koronadal\"\n          }\n        },\n        {\n          \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/barangay\",\n          \"valueCoding\": {\n            \"system\": \"{{psgcSystem}}\",\n            \"code\": \"1206306001\",\n            \"display\": \"Assumption\"\n          }\n        }\n      ],\n      \"use\": \"home\",\n      \"line\": [\n        \"R12 Connectathon Training Address\"\n      ],\n      \"postalCode\": \"9506\",\n      \"country\": \"PH\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of OperationOutcome\", function () {",
+                  "  pm.expect([\"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"OperationOutcome\") {",
+                  "  const issues = body.issue || [];",
+                  "  console.log(\"Validation issues:\", issues);",
+                  "  const fatal = issues.filter(i => i.severity === \"fatal\");",
+                  "  pm.test(\"No fatal validation issues\", function () { pm.expect(fatal.length).to.eql(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.02 — Validate Condition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Condition/$validate?profile={{profileCondition}}",
+              "host": [
+                "{{fhirBase}}/Condition/$validate?profile={{profileCondition}}"
+              ]
+            },
+            "description": "Validate the severe pre-eclampsia Condition.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Condition\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-condition\"\n    ]\n  },\n  \"clinicalStatus\": {\n    \"coding\": [\n      {\n        \"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\",\n        \"code\": \"active\"\n      }\n    ]\n  },\n  \"verificationStatus\": {\n    \"coding\": [\n      {\n        \"system\": \"http://terminology.hl7.org/CodeSystem/condition-ver-status\",\n        \"code\": \"provisional\",\n        \"display\": \"Provisional\"\n      }\n    ]\n  },\n  \"category\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://terminology.hl7.org/CodeSystem/condition-category\",\n          \"code\": \"encounter-diagnosis\",\n          \"display\": \"Encounter Diagnosis\"\n        }\n      ]\n    }\n  ],\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://snomed.info/sct\",\n        \"code\": \"398254007\",\n        \"display\": \"Pre-eclampsia\"\n      }\n    ],\n    \"text\": \"Severe pre-eclampsia requiring urgent referral\"\n  },\n  \"subject\": {\n    \"reference\": \"Patient/example\"\n  },\n  \"note\": [\n    {\n      \"text\": \"32 weeks AOG with severe headache and visual symptoms.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of OperationOutcome\", function () {",
+                  "  pm.expect([\"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"OperationOutcome\") {",
+                  "  const issues = body.issue || [];",
+                  "  console.log(\"Validation issues:\", issues);",
+                  "  const fatal = issues.filter(i => i.severity === \"fatal\");",
+                  "  pm.test(\"No fatal validation issues\", function () { pm.expect(fatal.length).to.eql(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.03 — Validate BP Observation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Observation/$validate?profile={{profileObservation}}",
+              "host": [
+                "{{fhirBase}}/Observation/$validate?profile={{profileObservation}}"
+              ]
+            },
+            "description": "Validate the single supporting clinical Observation.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Observation\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-observation\"\n    ]\n  },\n  \"status\": \"final\",\n  \"category\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n          \"code\": \"vital-signs\",\n          \"display\": \"Vital Signs\"\n        }\n      ]\n    }\n  ],\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://loinc.org\",\n        \"code\": \"85354-9\",\n        \"display\": \"Blood pressure panel with all children optional\"\n      }\n    ]\n  },\n  \"subject\": {\n    \"reference\": \"Patient/example\"\n  },\n  \"effectiveDateTime\": \"{{now}}\",\n  \"component\": [\n    {\n      \"code\": {\n        \"coding\": [\n          {\n            \"system\": \"http://loinc.org\",\n            \"code\": \"8480-6\",\n            \"display\": \"Systolic blood pressure\"\n          }\n        ]\n      },\n      \"valueQuantity\": {\n        \"value\": 180,\n        \"unit\": \"mmHg\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mm[Hg]\"\n      }\n    },\n    {\n      \"code\": {\n        \"coding\": [\n          {\n            \"system\": \"http://loinc.org\",\n            \"code\": \"8462-4\",\n            \"display\": \"Diastolic blood pressure\"\n          }\n        ]\n      },\n      \"valueQuantity\": {\n        \"value\": 110,\n        \"unit\": \"mmHg\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mm[Hg]\"\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of OperationOutcome\", function () {",
+                  "  pm.expect([\"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"OperationOutcome\") {",
+                  "  const issues = body.issue || [];",
+                  "  console.log(\"Validation issues:\", issues);",
+                  "  const fatal = issues.filter(i => i.severity === \"fatal\");",
+                  "  pm.test(\"No fatal validation issues\", function () { pm.expect(fatal.length).to.eql(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.04 — Validate ServiceRequest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/ServiceRequest/$validate?profile={{profileServiceRequest}}",
+              "host": [
+                "{{fhirBase}}/ServiceRequest/$validate?profile={{profileServiceRequest}}"
+              ]
+            },
+            "description": "Check the PeRef core semantics: active/order, urgent, patient, requester, receiving facility, reason, supportingInfo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ServiceRequest\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-service-request\"\n    ]\n  },\n  \"identifier\": [\n    {\n      \"system\": \"{{trainingReferralIdSystem}}\",\n      \"value\": \"R12-{{teamCode}}-{{runId}}\"\n    }\n  ],\n  \"requisition\": {\n    \"system\": \"{{trainingReferralIdSystem}}\",\n    \"value\": \"R12-{{teamCode}}-{{runId}}\"\n  },\n  \"status\": \"active\",\n  \"intent\": \"order\",\n  \"priority\": \"urgent\",\n  \"category\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://snomed.info/sct\",\n          \"code\": \"73770003\",\n          \"display\": \"Hospital-based outpatient emergency care center\"\n        }\n      ],\n      \"text\": \"Emergency\"\n    }\n  ],\n  \"subject\": {\n    \"reference\": \"Patient/example\"\n  },\n  \"occurrenceDateTime\": \"{{now}}\",\n  \"authoredOn\": \"{{now}}\",\n  \"requester\": {\n    \"reference\": \"PractitionerRole/example\"\n  },\n  \"performer\": [\n    {\n      \"reference\": \"Organization/example\"\n    }\n  ],\n  \"reasonCode\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://snomed.info/sct\",\n          \"code\": \"71388002\",\n          \"display\": \"Procedure\"\n        }\n      ],\n      \"text\": \"Urgent referral for management\"\n    }\n  ],\n  \"reasonReference\": [\n    {\n      \"reference\": \"Condition/example\"\n    }\n  ],\n  \"supportingInfo\": [\n    {\n      \"reference\": \"Observation/example\"\n    }\n  ],\n  \"note\": [\n    {\n      \"text\": \"IG-inspired lightweight training case: BP 180/110 mmHg with severe pre-eclampsia.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of OperationOutcome\", function () {",
+                  "  pm.expect([\"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"OperationOutcome\") {",
+                  "  const issues = body.issue || [];",
+                  "  console.log(\"Validation issues:\", issues);",
+                  "  const fatal = issues.filter(i => i.severity === \"fatal\");",
+                  "  pm.test(\"No fatal validation issues\", function () { pm.expect(fatal.length).to.eql(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03.05 — Validate Requested Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task/$validate?profile={{profileTask}}",
+              "host": [
+                "{{fhirBase}}/Task/$validate?profile={{profileTask}}"
+              ]
+            },
+            "description": "Initial Task is `requested`. Owner is deliberately absent until the receiving facility acknowledges it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Task\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-task\"\n    ]\n  },\n  \"status\": \"requested\",\n  \"intent\": \"order\",\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://snomed.info/sct\",\n        \"code\": \"3457005\",\n        \"display\": \"Patient referral\"\n      }\n    ],\n    \"text\": \"R12 Connectathon eReferral\"\n  },\n  \"focus\": {\n    \"reference\": \"ServiceRequest/example\"\n  },\n  \"for\": {\n    \"reference\": \"Patient/example\"\n  },\n  \"authoredOn\": \"{{now}}\",\n  \"lastModified\": \"{{now}}\",\n  \"requester\": {\n    \"reference\": \"PractitionerRole/example\"\n  },\n  \"note\": [\n    {\n      \"text\": \"Referral sent. Awaiting receiving-facility acknowledgement.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of OperationOutcome\", function () {",
+                  "  pm.expect([\"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"OperationOutcome\") {",
+                  "  const issues = body.issue || [];",
+                  "  console.log(\"Validation issues:\", issues);",
+                  "  const fatal = issues.filter(i => i.severity === \"fatal\");",
+                  "  pm.test(\"No fatal validation issues\", function () { pm.expect(fatal.length).to.eql(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03B — CREATE INDIVIDUAL RESOURCES",
+      "description": "## Create each referral resource individually\n\nRun these POST requests top-to-bottom before (or instead of) the 04.01 transaction bundle. Each request creates one resource and captures its server-assigned logical id into a collection variable that later requests reference:\n\n- PractitionerRole -> Practitioner + referring Organization\n- Condition / BP Observation -> Patient\n- ServiceRequest -> PractitionerRole + receiving Organization + Patient + Condition + Observation\n- Task -> ServiceRequest + Patient + PractitionerRole\n\nUnlike 04.01 (a single conditional-PUT transaction), these are plain POST creates: each run makes new records.",
+      "item": [
+        {
+          "name": "03B.01 — Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Patient",
+              "host": [
+                "{{fhirBase}}/Patient"
+              ]
+            },
+            "description": "Create the Patient and capture its server-assigned id into {{patientId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Patient\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient\"]},\"identifier\":[{\"system\":\"{{trainingPatientIdSystem}}\",\"value\":\"{{teamCode}}-PATIENT-{{runId}}\"}],\"active\":true,\"name\":[{\"use\":\"official\",\"family\":\"Santos\",\"given\":[\"Maria\",\"Test\"]}],\"telecom\":[{\"system\":\"phone\",\"value\":\"+639000000000\",\"use\":\"mobile\"}],\"gender\":\"female\",\"birthDate\":\"1988-03-12\",\"address\":[{\"extension\":[{\"url\":\"https://fhir.doh.gov.ph/phcore/StructureDefinition/region\",\"valueCoding\":{\"system\":\"{{psgcSystem}}\",\"code\":\"1200000000\",\"display\":\"Region XII (SOCCSKSARGEN)\"}},{\"url\":\"https://fhir.doh.gov.ph/phcore/StructureDefinition/province\",\"valueCoding\":{\"system\":\"{{psgcSystem}}\",\"code\":\"1206300000\",\"display\":\"South Cotabato\"}},{\"url\":\"https://fhir.doh.gov.ph/phcore/StructureDefinition/city-municipality\",\"valueCoding\":{\"system\":\"{{psgcSystem}}\",\"code\":\"1206306000\",\"display\":\"City of Koronadal\"}},{\"url\":\"https://fhir.doh.gov.ph/phcore/StructureDefinition/barangay\",\"valueCoding\":{\"system\":\"{{psgcSystem}}\",\"code\":\"1206306001\",\"display\":\"Assumption\"}}],\"use\":\"home\",\"line\":[\"R12 Connectathon Training Address\"],\"postalCode\":\"9506\",\"country\":\"PH\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Patient\", function () { pm.expect([\"Patient\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"patientId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.02 — Create Practitioner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Practitioner",
+              "host": [
+                "{{fhirBase}}/Practitioner"
+              ]
+            },
+            "description": "Create the Practitioner and capture its server-assigned id into {{refPractitionerId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Practitioner\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner\"]},\"identifier\":[{\"system\":\"{{trainingPractitionerIdSystem}}\",\"value\":\"{{teamCode}}-REFERRER\"}],\"active\":true,\"name\":[{\"use\":\"official\",\"family\":\"Demo\",\"given\":[\"Rosa\"],\"prefix\":[\"Dr.\"]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Practitioner\", function () { pm.expect([\"Practitioner\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"refPractitionerId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.03 — Create Referring Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Organization",
+              "host": [
+                "{{fhirBase}}/Organization"
+              ]
+            },
+            "description": "Create the Organization and capture its server-assigned id into {{referringOrgId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Organization\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization\"]},\"identifier\":[{\"system\":\"{{nhfrSystem}}\",\"value\":\"{{referringFacilityNhfr}}\"}],\"active\":true,\"name\":\"{{referringFacilityName}}\",\"telecom\":[{\"system\":\"phone\",\"value\":\"+639000000001\",\"use\":\"work\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Organization\", function () { pm.expect([\"Organization\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"referringOrgId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.04 — Create Receiving Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Organization",
+              "host": [
+                "{{fhirBase}}/Organization"
+              ]
+            },
+            "description": "Create the Organization and capture its server-assigned id into {{receivingOrgId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Organization\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization\"]},\"identifier\":[{\"system\":\"{{nhfrSystem}}\",\"value\":\"{{receivingFacilityNhfr}}\"}],\"active\":true,\"name\":\"{{receivingFacilityName}}\",\"telecom\":[{\"system\":\"phone\",\"value\":\"+639000000002\",\"use\":\"work\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Organization\", function () { pm.expect([\"Organization\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"receivingOrgId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.05 — Create PractitionerRole",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/PractitionerRole",
+              "host": [
+                "{{fhirBase}}/PractitionerRole"
+              ]
+            },
+            "description": "Create the PractitionerRole and capture its server-assigned id into {{refRoleId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"PractitionerRole\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-practitioner-role\"]},\"identifier\":[{\"system\":\"{{trainingPractitionerRoleIdSystem}}\",\"value\":\"{{teamCode}}-REFERRER-ROLE\"}],\"active\":true,\"practitioner\":{\"reference\":\"Practitioner/{{refPractitionerId}}\"},\"organization\":{\"reference\":\"Organization/{{referringOrgId}}\"},\"code\":[{\"coding\":[{\"system\":\"http://snomed.info/sct\",\"code\":\"158965000\",\"display\":\"Medical practitioner\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created PractitionerRole\", function () { pm.expect([\"PractitionerRole\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"refRoleId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.06 — Create Condition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Condition",
+              "host": [
+                "{{fhirBase}}/Condition"
+              ]
+            },
+            "description": "Create the Condition and capture its server-assigned id into {{conditionId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Condition\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-condition\"]},\"identifier\":[{\"system\":\"{{trainingConditionIdSystem}}\",\"value\":\"{{teamCode}}-CONDITION-{{runId}}\"}],\"clinicalStatus\":{\"coding\":[{\"system\":\"http://terminology.hl7.org/CodeSystem/condition-clinical\",\"code\":\"active\"}]},\"verificationStatus\":{\"coding\":[{\"system\":\"http://terminology.hl7.org/CodeSystem/condition-ver-status\",\"code\":\"provisional\",\"display\":\"Provisional\"}]},\"category\":[{\"coding\":[{\"system\":\"http://terminology.hl7.org/CodeSystem/condition-category\",\"code\":\"encounter-diagnosis\",\"display\":\"Encounter Diagnosis\"}]}],\"code\":{\"coding\":[{\"system\":\"http://snomed.info/sct\",\"code\":\"398254007\",\"display\":\"Pre-eclampsia\"}],\"text\":\"Severe pre-eclampsia requiring urgent referral\"},\"subject\":{\"reference\":\"Patient/{{patientId}}\"},\"note\":[{\"text\":\"32 weeks AOG with severe headache and visual symptoms.\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Condition\", function () { pm.expect([\"Condition\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"conditionId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.07 — Create BP Observation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Observation",
+              "host": [
+                "{{fhirBase}}/Observation"
+              ]
+            },
+            "description": "Create the Observation and capture its server-assigned id into {{bpObservationId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Observation\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-observation\"]},\"identifier\":[{\"system\":\"{{trainingObservationIdSystem}}\",\"value\":\"{{teamCode}}-BP-{{runId}}\"}],\"status\":\"final\",\"category\":[{\"coding\":[{\"system\":\"http://terminology.hl7.org/CodeSystem/observation-category\",\"code\":\"vital-signs\",\"display\":\"Vital Signs\"}]}],\"code\":{\"coding\":[{\"system\":\"http://loinc.org\",\"code\":\"85354-9\",\"display\":\"Blood pressure panel with all children optional\"}]},\"subject\":{\"reference\":\"Patient/{{patientId}}\"},\"effectiveDateTime\":\"{{now}}\",\"component\":[{\"code\":{\"coding\":[{\"system\":\"http://loinc.org\",\"code\":\"8480-6\",\"display\":\"Systolic blood pressure\"}]},\"valueQuantity\":{\"value\":180,\"unit\":\"mmHg\",\"system\":\"http://unitsofmeasure.org\",\"code\":\"mm[Hg]\"}},{\"code\":{\"coding\":[{\"system\":\"http://loinc.org\",\"code\":\"8462-4\",\"display\":\"Diastolic blood pressure\"}]},\"valueQuantity\":{\"value\":110,\"unit\":\"mmHg\",\"system\":\"http://unitsofmeasure.org\",\"code\":\"mm[Hg]\"}}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Observation\", function () { pm.expect([\"Observation\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"bpObservationId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.08 — Create ServiceRequest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/ServiceRequest",
+              "host": [
+                "{{fhirBase}}/ServiceRequest"
+              ]
+            },
+            "description": "Create the ServiceRequest and capture its server-assigned id into {{serviceRequestId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"ServiceRequest\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-service-request\"]},\"identifier\":[{\"system\":\"{{trainingReferralIdSystem}}\",\"value\":\"R12-{{teamCode}}-{{runId}}\"}],\"requisition\":{\"system\":\"{{trainingReferralIdSystem}}\",\"value\":\"R12-{{teamCode}}-{{runId}}\"},\"status\":\"active\",\"intent\":\"order\",\"priority\":\"urgent\",\"category\":[{\"coding\":[{\"system\":\"http://snomed.info/sct\",\"code\":\"73770003\",\"display\":\"Hospital-based outpatient emergency care center\"}],\"text\":\"Emergency\"}],\"subject\":{\"reference\":\"Patient/{{patientId}}\"},\"occurrenceDateTime\":\"{{now}}\",\"authoredOn\":\"{{now}}\",\"requester\":{\"reference\":\"PractitionerRole/{{refRoleId}}\"},\"performer\":[{\"reference\":\"Organization/{{receivingOrgId}}\"}],\"reasonCode\":[{\"coding\":[{\"system\":\"http://snomed.info/sct\",\"code\":\"71388002\",\"display\":\"Procedure\"}],\"text\":\"Urgent referral for management\"}],\"reasonReference\":[{\"reference\":\"Condition/{{conditionId}}\"}],\"supportingInfo\":[{\"reference\":\"Observation/{{bpObservationId}}\"}],\"note\":[{\"text\":\"IG-inspired lightweight training case: BP 180/110 mmHg with severe pre-eclampsia.\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created ServiceRequest\", function () { pm.expect([\"ServiceRequest\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"serviceRequestId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03B.09 — Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task",
+              "host": [
+                "{{fhirBase}}/Task"
+              ]
+            },
+            "description": "Create the Task and capture its server-assigned id into {{taskId}} for later requests.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resourceType\":\"Task\",\"meta\":{\"profile\":[\"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-task\"]},\"identifier\":[{\"system\":\"{{trainingTaskIdSystem}}\",\"value\":\"{{teamCode}}-TASK-{{runId}}\"}],\"status\":\"requested\",\"intent\":\"order\",\"code\":{\"coding\":[{\"system\":\"http://snomed.info/sct\",\"code\":\"3457005\",\"display\":\"Patient referral\"}],\"text\":\"R12 Connectathon eReferral\"},\"focus\":{\"reference\":\"ServiceRequest/{{serviceRequestId}}\"},\"for\":{\"reference\":\"Patient/{{patientId}}\"},\"authoredOn\":\"{{now}}\",\"lastModified\":\"{{now}}\",\"requester\":{\"reference\":\"PractitionerRole/{{refRoleId}}\"},\"note\":[{\"text\":\"Referral sent. Awaiting receiving-facility acknowledgement.\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"Created Task\", function () { pm.expect([\"Task\"]).to.include(body && body.resourceType); });",
+                  "if (body && body.id) pm.collectionVariables.set(\"taskId\", body.id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 — CREATE & SEND REFERRAL (TRANSACTION)",
+      "description": "## PeRef workflow steps 1–2: Create + Send\n\nSubmit a **9-entry transaction Bundle**.\n\nAll 9 entries use conditional PUT (upsert by business identifier):\nPatient, Practitioner, 2 Organizations, PractitionerRole, Condition, BP Observation, ServiceRequest, Task.\n\nIntra-Bundle references use `urn:uuid:` and therefore work before the server assigns logical IDs.\n\n**Participant build tasks (per the connectathon checklist):**\n- Create a new Organization based on your team name (set `referringFacilityName`/`receivingFacilityName`, keyed on your own `referringFacilityNhfr`/`receivingFacilityNhfr`).\n- Create your own Practitioner with a linked, coded PractitionerRole.\n- Create a resource for each resource type required by the PeRef IG: Patient, Practitioner, PractitionerRole, referring + receiving Organization, Condition, BP Observation, ServiceRequest, Task.",
+      "item": [
+        {
+          "name": "04.01 — SUBMIT Lightweight PeRef Referral Bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}",
+              "host": [
+                "{{fhirBase}}"
+              ]
+            },
+            "description": "Submit the lighter IG-inspired referral. This single transaction creates a resource for every PeRef IG resource type. Participant build tasks: (1) create a new Organization based on your team name; (2) create your own Practitioner with a linked, coded PractitionerRole; (3) create a resource for each PeRef IG resource type — Patient, Practitioner, PractitionerRole, referring + receiving Organization, Condition, BP Observation, ServiceRequest, Task. The response script captures all server-assigned IDs needed by later folders.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Bundle\",\n  \"type\": \"transaction\",\n  \"timestamp\": \"{{now}}\",\n  \"entry\": [\n    {\n      \"fullUrl\": \"urn:uuid:{{patientUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Patient\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingPatientIdSystem}}\",\n            \"value\": \"{{teamCode}}-PATIENT-{{runId}}\"\n          }\n        ],\n        \"active\": true,\n        \"name\": [\n          {\n            \"use\": \"official\",\n            \"family\": \"Santos\",\n            \"given\": [\n              \"Maria\",\n              \"Test\"\n            ]\n          }\n        ],\n        \"telecom\": [\n          {\n            \"system\": \"phone\",\n            \"value\": \"+639000000000\",\n            \"use\": \"mobile\"\n          }\n        ],\n        \"gender\": \"female\",\n        \"birthDate\": \"1988-03-12\",\n        \"address\": [\n          {\n            \"extension\": [\n              {\n                \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/region\",\n                \"valueCoding\": {\n                  \"system\": \"{{psgcSystem}}\",\n                  \"code\": \"1200000000\",\n                  \"display\": \"Region XII (SOCCSKSARGEN)\"\n                }\n              },\n              {\n                \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/province\",\n                \"valueCoding\": {\n                  \"system\": \"{{psgcSystem}}\",\n                  \"code\": \"1206300000\",\n                  \"display\": \"South Cotabato\"\n                }\n              },\n              {\n                \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/city-municipality\",\n                \"valueCoding\": {\n                  \"system\": \"{{psgcSystem}}\",\n                  \"code\": \"1206306000\",\n                  \"display\": \"City of Koronadal\"\n                }\n              },\n              {\n                \"url\": \"https://fhir.doh.gov.ph/phcore/StructureDefinition/barangay\",\n                \"valueCoding\": {\n                  \"system\": \"{{psgcSystem}}\",\n                  \"code\": \"1206306001\",\n                  \"display\": \"Assumption\"\n                }\n              }\n            ],\n            \"use\": \"home\",\n            \"line\": [\n              \"R12 Connectathon Training Address\"\n            ],\n            \"postalCode\": \"9506\",\n            \"country\": \"PH\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Patient?identifier={{trainingPatientIdSystem}}|{{teamCode}}-PATIENT-{{runId}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{refPractUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Practitioner\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-practitioner\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingPractitionerIdSystem}}\",\n            \"value\": \"{{teamCode}}-REFERRER\"\n          }\n        ],\n        \"active\": true,\n        \"name\": [\n          {\n            \"use\": \"official\",\n            \"family\": \"Demo\",\n            \"given\": [\n              \"Rosa\"\n            ],\n            \"prefix\": [\n              \"Dr.\"\n            ]\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Practitioner?identifier={{trainingPractitionerIdSystem}}|{{teamCode}}-REFERRER\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{refOrgUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Organization\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{nhfrSystem}}\",\n            \"value\": \"{{referringFacilityNhfr}}\"\n          }\n        ],\n        \"active\": true,\n        \"name\": \"{{referringFacilityName}}\",\n        \"telecom\": [\n          {\n            \"system\": \"phone\",\n            \"value\": \"+639000000001\",\n            \"use\": \"work\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Organization?identifier={{nhfrSystem}}|{{referringFacilityNhfr}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{recvOrgUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Organization\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-organization\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{nhfrSystem}}\",\n            \"value\": \"{{receivingFacilityNhfr}}\"\n          }\n        ],\n        \"active\": true,\n        \"name\": \"{{receivingFacilityName}}\",\n        \"telecom\": [\n          {\n            \"system\": \"phone\",\n            \"value\": \"+639000000002\",\n            \"use\": \"work\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Organization?identifier={{nhfrSystem}}|{{receivingFacilityNhfr}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{refRoleUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"PractitionerRole\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-practitioner-role\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingPractitionerRoleIdSystem}}\",\n            \"value\": \"{{teamCode}}-REFERRER-ROLE\"\n          }\n        ],\n        \"active\": true,\n        \"practitioner\": {\n          \"reference\": \"urn:uuid:{{refPractUuid}}\"\n        },\n        \"organization\": {\n          \"reference\": \"urn:uuid:{{refOrgUuid}}\"\n        },\n        \"code\": [\n          {\n            \"coding\": [\n              {\n                \"system\": \"http://snomed.info/sct\",\n                \"code\": \"158965000\",\n                \"display\": \"Medical practitioner\"\n              }\n            ]\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"PractitionerRole?identifier={{trainingPractitionerRoleIdSystem}}|{{teamCode}}-REFERRER-ROLE\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{conditionUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Condition\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-condition\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingConditionIdSystem}}\",\n            \"value\": \"{{teamCode}}-CONDITION-{{runId}}\"\n          }\n        ],\n        \"clinicalStatus\": {\n          \"coding\": [\n            {\n              \"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\",\n              \"code\": \"active\"\n            }\n          ]\n        },\n        \"verificationStatus\": {\n          \"coding\": [\n            {\n              \"system\": \"http://terminology.hl7.org/CodeSystem/condition-ver-status\",\n              \"code\": \"provisional\",\n              \"display\": \"Provisional\"\n            }\n          ]\n        },\n        \"category\": [\n          {\n            \"coding\": [\n              {\n                \"system\": \"http://terminology.hl7.org/CodeSystem/condition-category\",\n                \"code\": \"encounter-diagnosis\",\n                \"display\": \"Encounter Diagnosis\"\n              }\n            ]\n          }\n        ],\n        \"code\": {\n          \"coding\": [\n            {\n              \"system\": \"http://snomed.info/sct\",\n              \"code\": \"398254007\",\n              \"display\": \"Pre-eclampsia\"\n            }\n          ],\n          \"text\": \"Severe pre-eclampsia requiring urgent referral\"\n        },\n        \"subject\": {\n          \"reference\": \"urn:uuid:{{patientUuid}}\"\n        },\n        \"note\": [\n          {\n            \"text\": \"32 weeks AOG with severe headache and visual symptoms.\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Condition?identifier={{trainingConditionIdSystem}}|{{teamCode}}-CONDITION-{{runId}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{bpUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Observation\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-observation\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingObservationIdSystem}}\",\n            \"value\": \"{{teamCode}}-BP-{{runId}}\"\n          }\n        ],\n        \"status\": \"final\",\n        \"category\": [\n          {\n            \"coding\": [\n              {\n                \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n                \"code\": \"vital-signs\",\n                \"display\": \"Vital Signs\"\n              }\n            ]\n          }\n        ],\n        \"code\": {\n          \"coding\": [\n            {\n              \"system\": \"http://loinc.org\",\n              \"code\": \"85354-9\",\n              \"display\": \"Blood pressure panel with all children optional\"\n            }\n          ]\n        },\n        \"subject\": {\n          \"reference\": \"urn:uuid:{{patientUuid}}\"\n        },\n        \"effectiveDateTime\": \"{{now}}\",\n        \"component\": [\n          {\n            \"code\": {\n              \"coding\": [\n                {\n                  \"system\": \"http://loinc.org\",\n                  \"code\": \"8480-6\",\n                  \"display\": \"Systolic blood pressure\"\n                }\n              ]\n            },\n            \"valueQuantity\": {\n              \"value\": 180,\n              \"unit\": \"mmHg\",\n              \"system\": \"http://unitsofmeasure.org\",\n              \"code\": \"mm[Hg]\"\n            }\n          },\n          {\n            \"code\": {\n              \"coding\": [\n                {\n                  \"system\": \"http://loinc.org\",\n                  \"code\": \"8462-4\",\n                  \"display\": \"Diastolic blood pressure\"\n                }\n              ]\n            },\n            \"valueQuantity\": {\n              \"value\": 110,\n              \"unit\": \"mmHg\",\n              \"system\": \"http://unitsofmeasure.org\",\n              \"code\": \"mm[Hg]\"\n            }\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Observation?identifier={{trainingObservationIdSystem}}|{{teamCode}}-BP-{{runId}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{serviceRequestUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"ServiceRequest\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-service-request\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingReferralIdSystem}}\",\n            \"value\": \"R12-{{teamCode}}-{{runId}}\"\n          }\n        ],\n        \"requisition\": {\n          \"system\": \"{{trainingReferralIdSystem}}\",\n          \"value\": \"R12-{{teamCode}}-{{runId}}\"\n        },\n        \"status\": \"active\",\n        \"intent\": \"order\",\n        \"priority\": \"urgent\",\n        \"category\": [\n          {\n            \"coding\": [\n              {\n                \"system\": \"http://snomed.info/sct\",\n                \"code\": \"73770003\",\n                \"display\": \"Hospital-based outpatient emergency care center\"\n              }\n            ],\n            \"text\": \"Emergency\"\n          }\n        ],\n        \"subject\": {\n          \"reference\": \"urn:uuid:{{patientUuid}}\"\n        },\n        \"occurrenceDateTime\": \"{{now}}\",\n        \"authoredOn\": \"{{now}}\",\n        \"requester\": {\n          \"reference\": \"urn:uuid:{{refRoleUuid}}\"\n        },\n        \"performer\": [\n          {\n            \"reference\": \"urn:uuid:{{recvOrgUuid}}\"\n          }\n        ],\n        \"reasonCode\": [\n          {\n            \"coding\": [\n              {\n                \"system\": \"http://snomed.info/sct\",\n                \"code\": \"71388002\",\n                \"display\": \"Procedure\"\n              }\n            ],\n            \"text\": \"Urgent referral for management\"\n          }\n        ],\n        \"reasonReference\": [\n          {\n            \"reference\": \"urn:uuid:{{conditionUuid}}\"\n          }\n        ],\n        \"supportingInfo\": [\n          {\n            \"reference\": \"urn:uuid:{{bpUuid}}\"\n          }\n        ],\n        \"note\": [\n          {\n            \"text\": \"IG-inspired lightweight training case: BP 180/110 mmHg with severe pre-eclampsia.\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"ServiceRequest?identifier={{trainingReferralIdSystem}}|R12-{{teamCode}}-{{runId}}\"\n      }\n    },\n    {\n      \"fullUrl\": \"urn:uuid:{{taskUuid}}\",\n      \"resource\": {\n        \"resourceType\": \"Task\",\n        \"meta\": {\n          \"profile\": [\n            \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-task\"\n          ]\n        },\n        \"identifier\": [\n          {\n            \"system\": \"{{trainingTaskIdSystem}}\",\n            \"value\": \"{{teamCode}}-TASK-{{runId}}\"\n          }\n        ],\n        \"status\": \"requested\",\n        \"intent\": \"order\",\n        \"code\": {\n          \"coding\": [\n            {\n              \"system\": \"http://snomed.info/sct\",\n              \"code\": \"3457005\",\n              \"display\": \"Patient referral\"\n            }\n          ],\n          \"text\": \"R12 Connectathon eReferral\"\n        },\n        \"focus\": {\n          \"reference\": \"urn:uuid:{{serviceRequestUuid}}\"\n        },\n        \"for\": {\n          \"reference\": \"urn:uuid:{{patientUuid}}\"\n        },\n        \"authoredOn\": \"{{now}}\",\n        \"lastModified\": \"{{now}}\",\n        \"requester\": {\n          \"reference\": \"urn:uuid:{{refRoleUuid}}\"\n        },\n        \"note\": [\n          {\n            \"text\": \"Referral sent. Awaiting receiving-facility acknowledgement.\"\n          }\n        ]\n      },\n      \"request\": {\n        \"method\": \"PUT\",\n        \"url\": \"Task?identifier={{trainingTaskIdSystem}}|{{teamCode}}-TASK-{{runId}}\"\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = ['teamCode','referringFacilityNhfr','receivingFacilityNhfr'];",
+                  "const missing = required.filter(k => {",
+                  "  const v = (pm.variables.get(k) || pm.collectionVariables.get(k) || '').trim();",
+                  "  return !v || v.startsWith('SET-ME');",
+                  "});",
+                  "if (missing.length) throw new Error('Set before submission: ' + missing.join(', '));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Bundle\", function () {",
+                  "  pm.expect([\"Bundle\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (!body || body.resourceType !== \"Bundle\") return;",
+                  "const entries = body.entry || [];",
+                  "function capture(index, variable) {",
+                  "  const loc = entries[index] && entries[index].response && entries[index].response.location;",
+                  "  if (!loc) return;",
+                  "  const clean = loc.split(\"/_history/\")[0];",
+                  "  const parts = clean.split(\"/\");",
+                  "  const id = parts[1];",
+                  "  if (id) pm.collectionVariables.set(variable, id);",
+                  "}",
+                  "capture(0, \"patientId\");",
+                  "capture(1, \"refPractitionerId\");",
+                  "capture(2, \"referringOrgId\");",
+                  "capture(3, \"receivingOrgId\");",
+                  "capture(4, \"refRoleId\");",
+                  "capture(5, \"conditionId\");",
+                  "capture(6, \"bpObservationId\");",
+                  "capture(7, \"serviceRequestId\");",
+                  "capture(8, \"taskId\");",
+                  "console.log(\"Captured workflow IDs\", {",
+                  "  patientId: pm.collectionVariables.get(\"patientId\"),",
+                  "  serviceRequestId: pm.collectionVariables.get(\"serviceRequestId\"),",
+                  "  taskId: pm.collectionVariables.get(\"taskId\")",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 — READ & SEARCH THE REFERRAL",
+      "description": "## Goal\nVerify that another client can discover and interpret the referral after submission.",
+      "item": [
+        {
+          "name": "05.01 — Read ServiceRequest",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/ServiceRequest/{{serviceRequestId}}",
+              "host": [
+                "{{fhirBase}}/ServiceRequest/{{serviceRequestId}}"
+              ]
+            },
+            "description": "Verify `status=active`, `intent=order`, `priority=urgent`, reasonReference, and supportingInfo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ServiceRequest, OperationOutcome\", function () {",
+                  "  pm.expect([\"ServiceRequest\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.02 — Read Requested Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "At this point the Task should be `requested` and should not yet have an owner."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"Task\") {",
+                  "  pm.test(\"Task starts requested\", function () { pm.expect(body.status).to.eql(\"requested\"); });",
+                  "  pm.test(\"Requested Task has no owner yet\", function () { pm.expect(body.owner).to.eql(undefined); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.03 — Search Referral by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/ServiceRequest?subject=Patient/{{patientId}}",
+              "host": [
+                "{{fhirBase}}/ServiceRequest?subject=Patient/{{patientId}}"
+              ]
+            },
+            "description": "Standard search for referrals belonging to the created patient."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Bundle\", function () {",
+                  "  pm.expect([\"Bundle\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05.04 — Search Tasks by Focus",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task?focus=ServiceRequest/{{serviceRequestId}}",
+              "host": [
+                "{{fhirBase}}/Task?focus=ServiceRequest/{{serviceRequestId}}"
+              ]
+            },
+            "description": "Find workflow Tasks associated with the referral."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Bundle\", function () {",
+                  "  pm.expect([\"Bundle\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 — RECEIVE & ACCEPT REFERRAL",
+      "description": "## PeRef workflow steps 3–4: Receive + Respond\n\nThe receiving facility:\n1. acknowledges receipt (`requested` → `received`) and becomes owner;\n2. accepts the referral (`received` → `accepted`).\n\nJSON Patch is used to keep this learning exercise small. The IG tutorial also demonstrates PATCH\nfor state transitions when supported by the FHIR server.",
+      "item": [
+        {
+          "name": "06.01 — RECEIVE: Task requested → received",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json-patch+json",
+                "type": "text"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"op\": \"replace\",\n    \"path\": \"/status\",\n    \"value\": \"received\"\n  },\n  {\n    \"op\": \"replace\",\n    \"path\": \"/lastModified\",\n    \"value\": \"{{now}}\"\n  },\n  {\n    \"op\": \"add\",\n    \"path\": \"/owner\",\n    \"value\": {\n      \"reference\": \"Organization/{{receivingOrgId}}\",\n      \"display\": \"{{receivingFacilityName}}\"\n    }\n  },\n  {\n    \"op\": \"add\",\n    \"path\": \"/note/-\",\n    \"value\": {\n      \"text\": \"Referral received by the receiving facility. Pending review.\"\n    }\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "Add the receiving Organization as Task.owner and mark the referral received."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"Task\") {",
+                  "  pm.test(\"Task is received\", function () { pm.expect(body.status).to.eql(\"received\"); });",
+                  "  pm.test(\"Receiving owner is assigned\", function () { pm.expect(body.owner && body.owner.reference).to.be.ok; });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.02 — ACCEPT: Task received → accepted",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json-patch+json",
+                "type": "text"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"op\": \"replace\",\n    \"path\": \"/status\",\n    \"value\": \"accepted\"\n  },\n  {\n    \"op\": \"replace\",\n    \"path\": \"/lastModified\",\n    \"value\": \"{{now}}\"\n  },\n  {\n    \"op\": \"add\",\n    \"path\": \"/note/-\",\n    \"value\": {\n      \"text\": \"Referral accepted for urgent evaluation and management.\"\n    }\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "Represent the positive receiving-facility response with Task.status=`accepted`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"Task\") {",
+                  "  pm.test(\"Task is accepted\", function () { pm.expect(body.status).to.eql(\"accepted\"); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06.03 — Verify Accepted Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "Read back the accepted Task; owner should remain populated."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 — CLOSE REFERRAL",
+      "description": "## PeRef workflow step 5: Close\n\nThe current Connectathon readiness criteria expect:\n- a receiving Encounter,\n- Task.status = `completed`,\n- completion output.\n\nThis collection uses the receiving Encounter itself as Task output via `valueReference`.\nFinally, the ServiceRequest is marked `completed`.",
+      "item": [
+        {
+          "name": "07.01 — Create Receiving Encounter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Encounter",
+              "host": [
+                "{{fhirBase}}/Encounter"
+              ]
+            },
+            "description": "Create the receiving-side completed encounter linked back to the referral ServiceRequest.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Encounter\",\n  \"meta\": {\n    \"profile\": [\n      \"https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-encounter\"\n    ]\n  },\n  \"status\": \"finished\",\n  \"class\": {\n    \"system\": \"http://terminology.hl7.org/CodeSystem/v3-ActCode\",\n    \"code\": \"AMB\",\n    \"display\": \"ambulatory\"\n  },\n  \"subject\": {\n    \"reference\": \"Patient/{{patientId}}\"\n  },\n  \"basedOn\": [\n    {\n      \"reference\": \"ServiceRequest/{{serviceRequestId}}\"\n    }\n  ],\n  \"period\": {\n    \"start\": \"{{now}}\",\n    \"end\": \"{{now}}\"\n  },\n  \"serviceProvider\": {\n    \"reference\": \"Organization/{{receivingOrgId}}\"\n  },\n  \"note\": [\n    {\n      \"text\": \"Receiving encounter created to close the Connectathon referral workflow.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Encounter, OperationOutcome\", function () {",
+                  "  pm.expect([\"Encounter\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "let id = body && body.id;",
+                  "if (!id) {",
+                  "  const loc = pm.response.headers.get(\"Location\") || pm.response.headers.get(\"Content-Location\");",
+                  "  if (loc) {",
+                  "    const m = loc.match(/Encounter\\/([^\\/]+)/);",
+                  "    if (m) id = m[1];",
+                  "  }",
+                  "}",
+                  "if (id) pm.collectionVariables.set(\"receivingEncounterId\", id);",
+                  "pm.test(\"Receiving Encounter ID captured\", function () {",
+                  "  pm.expect(pm.collectionVariables.get(\"receivingEncounterId\")).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.02 — COMPLETE Task + Add Completion Output",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json-patch+json",
+                "type": "text"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"op\": \"replace\",\n    \"path\": \"/status\",\n    \"value\": \"completed\"\n  },\n  {\n    \"op\": \"replace\",\n    \"path\": \"/lastModified\",\n    \"value\": \"{{now}}\"\n  },\n  {\n    \"op\": \"add\",\n    \"path\": \"/output\",\n    \"value\": [\n      {\n        \"type\": {\n          \"text\": \"Referral completion encounter\"\n        },\n        \"valueReference\": {\n          \"reference\": \"Encounter/{{receivingEncounterId}}\"\n        }\n      }\n    ]\n  },\n  {\n    \"op\": \"add\",\n    \"path\": \"/note/-\",\n    \"value\": {\n      \"text\": \"Referral completed; receiving encounter recorded.\"\n    }\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "Close the workflow and record the receiving Encounter as Task output."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"Task\") {",
+                  "  pm.test(\"Task is completed\", function () { pm.expect(body.status).to.eql(\"completed\"); });",
+                  "  pm.test(\"Completion output is present\", function () { pm.expect(body.output && body.output.length).to.be.above(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.03 — Mark ServiceRequest Completed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json-patch+json",
+                "type": "text"
+              },
+              {
+                "key": "Prefer",
+                "value": "return=representation",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"op\": \"replace\",\n    \"path\": \"/status\",\n    \"value\": \"completed\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{fhirBase}}/ServiceRequest/{{serviceRequestId}}",
+              "host": [
+                "{{fhirBase}}/ServiceRequest/{{serviceRequestId}}"
+              ]
+            },
+            "description": "After the referred service has been rendered, close the ServiceRequest lifecycle as well."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ServiceRequest, OperationOutcome\", function () {",
+                  "  pm.expect([\"ServiceRequest\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"ServiceRequest\") {",
+                  "  pm.test(\"ServiceRequest is completed\", function () { pm.expect(body.status).to.eql(\"completed\"); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07.04 — Verify Final Task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{fhirBase}}/Task/{{taskId}}",
+              "host": [
+                "{{fhirBase}}/Task/{{taskId}}"
+              ]
+            },
+            "description": "Final smoke-test check: Task should be completed, retain owner, and contain output."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of Task, OperationOutcome\", function () {",
+                  "  pm.expect([\"Task\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});",
+                  "",
+                  "if (body && body.resourceType === \"Task\") {",
+                  "  pm.test(\"Final Task is completed\", function () { pm.expect(body.status).to.eql(\"completed\"); });",
+                  "  pm.test(\"Final Task has owner\", function () { pm.expect(body.owner && body.owner.reference).to.be.ok; });",
+                  "  pm.test(\"Final Task has output\", function () { pm.expect(body.output && body.output.length).to.be.above(0); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "99 — IG REFERENCES",
+      "description": "Use these as comparison/reference material rather than required lab steps.\n\nThe official Ana Reyes transaction is intentionally much richer than the lightweight R12 training bundle.",
+      "item": [
+        {
+          "name": "99.01 — PH eReferral Connectathon Readiness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://build.fhir.org/ig/UPM-NTHC/ph-ereferral/branches/main/en/connectathon-readiness.html",
+              "host": [
+                "https://build.fhir.org/ig/UPM-NTHC/ph-ereferral/branches/main/en/connectathon-readiness.html"
+              ]
+            },
+            "description": "The current minimum by-hand Connectathon workflow and pass criteria."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "99.02 — Ana Reyes Sample Case Tutorial",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://build.fhir.org/ig/ph-ereferral-organization/ph-ereferral/en/sample-case-ana-reyes.html",
+              "host": [
+                "https://build.fhir.org/ig/ph-ereferral-organization/ph-ereferral/en/sample-case-ana-reyes.html"
+              ]
+            },
+            "description": "The full end-to-end IG tutorial used as the source pattern for this lighter exercise."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "99.03 — Official June 2026 Postman Collection (Raw)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "https://raw.githubusercontent.com/UPM-NTHC/June-2026-Philippines-FHIR-Connectathon/main/ph-ereferral-collection/ph-ereferral-collection.json",
+              "host": [
+                "https://raw.githubusercontent.com/UPM-NTHC/June-2026-Philippines-FHIR-Connectathon/main/ph-ereferral-collection/ph-ereferral-collection.json"
+              ]
+            },
+            "description": "Reference collection from the June 2026 Philippines FHIR Connectathon."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
