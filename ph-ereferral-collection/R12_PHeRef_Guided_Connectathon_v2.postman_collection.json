@@ -129,6 +129,31 @@
       "type": "string"
     },
     {
+      "key": "vsPwdDisabilityType",
+      "value": "https://fhir.doh.gov.ph/pheref/ValueSet/pwd-disability-type-vs",
+      "type": "string"
+    },
+    {
+      "key": "vsAdministrativeGender",
+      "value": "http://hl7.org/fhir/ValueSet/administrative-gender",
+      "type": "string"
+    },
+    {
+      "key": "vsTaskStatus",
+      "value": "http://hl7.org/fhir/ValueSet/task-status",
+      "type": "string"
+    },
+    {
+      "key": "vsContactPointSystem",
+      "value": "http://hl7.org/fhir/ValueSet/contact-point-system",
+      "type": "string"
+    },
+    {
+      "key": "vsContactPointUse",
+      "value": "http://hl7.org/fhir/ValueSet/contact-point-use",
+      "type": "string"
+    },
+    {
       "key": "profilePatient",
       "value": "https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient",
       "type": "string"
@@ -510,7 +535,187 @@
           ]
         },
         {
-          "name": "02.04 — Lookup SNOMED: Pre-eclampsia",
+          "name": "02.04 — Expand PWD Disability Type ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsPwdDisabilityType}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsPwdDisabilityType}}"
+              ]
+            },
+            "description": "Expand the PH eReferral PWD disability type ValueSet for disability-related coded data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.05 — Expand Administrative Gender ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsAdministrativeGender}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsAdministrativeGender}}"
+              ]
+            },
+            "description": "Expand the base FHIR administrative gender ValueSet used by Patient.gender."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.06 — Expand Task Status ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsTaskStatus}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsTaskStatus}}"
+              ]
+            },
+            "description": "Expand the base FHIR Task status ValueSet used across the referral workflow states."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.07 — Expand Contact Point System ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsContactPointSystem}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsContactPointSystem}}"
+              ]
+            },
+            "description": "Expand the base FHIR ContactPoint.system ValueSet for telecom elements."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.08 — Expand Contact Point Use ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/fhir+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{txBase}}/ValueSet/$expand?url={{vsContactPointUse}}",
+              "host": [
+                "{{txBase}}/ValueSet/$expand?url={{vsContactPointUse}}"
+              ]
+            },
+            "description": "Expand the base FHIR ContactPoint.use ValueSet for telecom use qualifiers."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP response is not a server error\", function () { pm.expect(pm.response.code).to.be.below(500); });",
+                  "let body = null;",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"FHIR resourceType is one of ValueSet, OperationOutcome\", function () {",
+                  "  pm.expect([\"ValueSet\", \"OperationOutcome\"]).to.include(body && body.resourceType);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02.09 — Lookup SNOMED: Pre-eclampsia",
           "request": {
             "method": "GET",
             "header": [
@@ -546,7 +751,7 @@
           ]
         },
         {
-          "name": "02.05 — Lookup LOINC: Blood Pressure Panel",
+          "name": "02.10 — Lookup LOINC: Blood Pressure Panel",
           "request": {
             "method": "GET",
             "header": [
@@ -582,7 +787,7 @@
           ]
         },
         {
-          "name": "02.06 — PSGC Lookup: Region XII",
+          "name": "02.11 — PSGC Lookup: Region XII",
           "request": {
             "method": "GET",
             "header": [
@@ -618,7 +823,7 @@
           ]
         },
         {
-          "name": "02.07 — PSGC Lookup: City of Koronadal",
+          "name": "02.12 — PSGC Lookup: City of Koronadal",
           "request": {
             "method": "GET",
             "header": [
@@ -654,7 +859,7 @@
           ]
         },
         {
-          "name": "02.08 — PSGC Lookup: Selected Barangay",
+          "name": "02.13 — PSGC Lookup: Selected Barangay",
           "request": {
             "method": "GET",
             "header": [
